@@ -21,11 +21,11 @@ import java.util.List;
 @Component
 public class TokenFilter implements GlobalFilter, Ordered {
 
-    // As unicas rotas que passam sem token. Sem elas ninguem consegue se
-    // cadastrar nem pegar o primeiro token -- o sistema tranca por fora.
     private static final List<String> LIVRES = List.of(
             "/auth-service/usuarios/login",
             "/auth-service/usuarios");
+
+    private static final String PREFIXO_FORNECEDORES = "/fornecedores-service";
 
     private final SecretKey chave;
 
@@ -42,11 +42,12 @@ public class TokenFilter implements GlobalFilter, Ordered {
         String caminho = exchange.getRequest().getURI().getPath();
 
         // Rota livre: chain.filter e' o "pode seguir", sem conferir nada.
-        if (LIVRES.contains(caminho)) {
+        // Tambem libera tudo do fornecedores-service para acesso direto pelo gateway.
+        if (LIVRES.contains(caminho) || caminho.startsWith(PREFIXO_FORNECEDORES)) {
             return chain.filter(exchange);
         }
 
-        // Le o cabecalho onde o crachá viaja: "Authorization: Bearer eyJhbGci..."
+        // Le o cabecalho onde o cracha viaja: "Authorization: Bearer eyJhbGci..."
         String cabecalho = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
         // Nao mandou cabecalho, ou mandou em outro formato: nem olha o token.
